@@ -1,5 +1,11 @@
 import traverse from "@babel/traverse";
 
-export function walk(ast, visitor) {
-    traverse.default(ast, visitor);
+/**
+ * Traverses a Babel AST.
+ *
+ * @param {import("@babel/types").File} ast
+ * @param {Object} visitors
+ */
+export function traverseAST(ast, visitors) {
+    traverse.default(ast, visitors);
 }

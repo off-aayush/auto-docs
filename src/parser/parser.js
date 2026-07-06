@@ -1,8 +1,20 @@
-import * as parser from "@babel/parser";
+import { parse } from "@babel/parser";
 
-export function parse(code) {
-    return parser.parse(code, {
-        sourceType: "module",
-        plugins: ["jsx", "classProperties", "dynamicImport"],
+/**
+ * Converts JavaScript source code into a Babel AST.
+ *
+ * @param {string} sourceCode
+ * @returns {import("@babel/types").File}
+ */
+export function parseFile(sourceCode) {
+    return parse(sourceCode, {
+        sourceType: "unambiguous",
+        plugins: [
+            "jsx",
+            "classProperties",
+            "dynamicImport",
+            "optionalChaining",
+            "nullishCoalescingOperator",
+        ],
     });
 }

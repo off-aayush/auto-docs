@@ -1,22 +1,33 @@
-import ora from "ora";
-import chalk from "chalk";
+import fs from "fs-extra";
+import path from "path";
 
 import { scanProject } from "../scanner/scanProject.js";
+import { parseFile } from "../parser/parser.js";
 
 export async function loadProject(projectPath) {
-    const spinner = ora("Scanning project...").start();
+    const files = await scanProject(projectPath);
 
-    try {
-        const files = await scanProject(projectPath);
+    const parsedFiles = [];
 
-        spinner.succeed(`Found ${files.length} JavaScript files\n`);
+    for (const file of files) {
+        const absolutePath = path.join(projectPath, file);
 
-        files.forEach((file) => {
-            console.log(chalk.green(file));
+        const sourceCode = await fs.readFile(absolutePath, "utf8");
+
+        const ast = parseFile(sourceCode);
+
+        parsedFiles.push({
+            path: file,
+            sourceCode,
+            ast,
         });
-    } catch (error) {
-        spinner.fail("Failed to scan project.");
-
-        console.error(error.message);
     }
+
+    console.log(parsedFiles.length, " parsedFiles length");
+
+    //Inspecting
+    // console.log(parsedFiles[0]);
+    console.log(
+    JSON.stringify(parsedFiles[0].ast.program.body, null, 2)
+);
 }

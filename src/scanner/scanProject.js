@@ -1,0 +1,27 @@
+import { glob } from "glob";
+import path from "path";
+import fs from "fs-extra";
+
+export async function scanProject(projectPath) {
+    const absolutePath = path.resolve(projectPath);
+
+    if (!(await fs.pathExists(absolutePath))) {
+        throw new Error("Project path does not exist.");
+    }
+
+    const files = await glob("**/*.js", {
+        cwd: absolutePath,
+
+        absolute: false,
+
+        ignore: [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/dist/**",
+            "**/build/**",
+            "**/coverage/**",
+        ],
+    });
+
+    return files.sort();
+}

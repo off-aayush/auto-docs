@@ -1,0 +1,36 @@
+{
+  "name": "auto-docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/off-aayush/auto-docs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/off-aayush/auto-docs/issues"
+  },
+  "homepage": "https://github.com/off-aayush/auto-docs#readme",
+  "dependencies": {
+    "@babel/parser": "^8.0.0",
+    "@babel/traverse": "^8.0.0",
+    "@babel/types": "^8.0.0",
+    "chalk": "^5.6.2",
+    "commander": "^15.0.0",
+    "fs-extra": "^11.3.6",
+    "glob": "^13.0.6",
+    "graphlib": "^2.1.8",
+    "ignore": "^7.0.5",
+    "markdown-table": "^3.0.4",
+    "ora": "^9.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

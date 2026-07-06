@@ -1,26 +1,38 @@
 {
   "name": "auto-docs",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Automated technical documentation generator for JavaScript projects",
+  "type": "module",
+  "main": "src/cli.js",
+  "bin": {
+    "autodocs": "./src/cli.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/cli.js",
+    "dev": "nodemon src/cli.js",
+    "test": "echo \"No tests yet\""
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/off-aayush/auto-docs.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "documentation",
+    "javascript",
+    "ast",
+    "parser",
+    "automation"
+  ],
+  "author": "Aayush Chourasia",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/off-aayush/auto-docs/issues"
   },
   "homepage": "https://github.com/off-aayush/auto-docs#readme",
   "dependencies": {
-    "@babel/parser": "^8.0.0",
-    "@babel/traverse": "^8.0.0",
-    "@babel/types": "^8.0.0",
+    "@babel/parser": "^7.29.7",
+    "@babel/traverse": "^7.29.7",
+    "@babel/types": "^7.29.7",
     "chalk": "^5.6.2",
     "commander": "^15.0.0",
     "fs-extra": "^11.3.6",

@@ -1,33 +1,34 @@
-import fs from "fs-extra";
 import path from "path";
+import fs from "fs-extra";
 
 import { scanProject } from "../scanner/scanProject.js";
 import { parseFile } from "../parser/parser.js";
 
+import { ProjectModel } from "../model/ProjectModel.js";
+import { FileModel } from "../model/FileModel.js";
+
+import { analyze } from "./AnalyzerEngine.js";
+
 export async function loadProject(projectPath) {
+    const project = new ProjectModel(path.basename(projectPath));
+
     const files = await scanProject(projectPath);
 
-    const parsedFiles = [];
-
     for (const file of files) {
-        const absolutePath = path.join(projectPath, file);
+        const absolute = path.join(projectPath, file);
 
-        const sourceCode = await fs.readFile(absolutePath, "utf8");
+        const sourceCode = await fs.readFile(absolute, "utf8");
 
         const ast = parseFile(sourceCode);
 
-        parsedFiles.push({
-            path: file,
-            sourceCode,
-            ast,
-        });
+        const fileModel = new FileModel(file, sourceCode, ast);
+
+        analyze(fileModel);
+
+        project.addFile(fileModel);
     }
 
-    console.log(parsedFiles.length, " parsedFiles length");
-
-    //Inspecting
-    // console.log(parsedFiles[0]);
-    console.log(
-    JSON.stringify(parsedFiles[0].ast.program.body, null, 2)
-);
+    console.dir(project, {
+        depth: null,
+    });
 }

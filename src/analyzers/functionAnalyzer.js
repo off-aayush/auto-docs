@@ -1,17 +1,17 @@
-export function analyzeFunctions(ast) {
-    const functions = [];
+import { traverseAST } from "../parser/traverse.js";
 
-    walk(ast, {
+export function analyzeFunctions(fileModel) {
+    traverseAST(fileModel.ast, {
         FunctionDeclaration(path) {
-            functions.push({
-                name: path.node.id.name,
+            fileModel.functions.push({
+                name: path.node.id?.name,
 
                 async: path.node.async,
 
-                params: path.node.params.map((p) => p.name),
+                params: path.node.params.map((param) => param.name),
+
+                type: "FunctionDeclaration",
             });
         },
     });
-
-    return functions;
 }

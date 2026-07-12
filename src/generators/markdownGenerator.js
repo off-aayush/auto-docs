@@ -86,9 +86,14 @@ export async function generateMarkdown(projectModel, outputDir) {
         // Routes
         if (file.routes && file.routes.length > 0) {
             content += `## Routes\n\n`;
-            const table = [["Method", "Path"]];
+            const table = [["Method", "Path", "Handler", "Middleware"]];
             file.routes.forEach(route => {
-                table.push([route.method, route.path]);
+                table.push([
+                    route.method, 
+                    route.path,
+                    route.handler || "-",
+                    (route.middleware && route.middleware.length > 0) ? route.middleware.join(", ") : "-"
+                ]);
             });
             content += markdownTable(table) + "\n\n";
         }

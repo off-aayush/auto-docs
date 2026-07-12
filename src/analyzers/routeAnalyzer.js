@@ -24,9 +24,36 @@ export function analyzeRoutes(fileModel) {
                             routePath = args[0].quasis[0].value.raw + " (dynamic)";
                         }
 
+                        const getFunctionName = (node) => {
+                            if (!node) return "unknown";
+                            if (node.type === "Identifier") return node.name;
+                            if (node.type === "MemberExpression") {
+                                const objName = getFunctionName(node.object);
+                                const propName = getFunctionName(node.property);
+                                return `${objName}.${propName}`;
+                            }
+                            if (node.type === "ArrowFunctionExpression") return "<arrow function>";
+                            if (node.type === "FunctionExpression") return node.id ? node.id.name : "<function>";
+                            if (node.type === "CallExpression") return "<function call>";
+                            return `<${node.type}>`;
+                        };
+
+                        const middlewares = [];
+                        let handler = "none";
+
+                        if (args.length > 1) {
+                            handler = getFunctionName(args[args.length - 1]);
+                            
+                            for (let i = 1; i < args.length - 1; i++) {
+                                middlewares.push(getFunctionName(args[i]));
+                            }
+                        }
+
                         fileModel.routes.push({
                             method: propertyName.toUpperCase(),
-                            path: routePath
+                            path: routePath,
+                            handler,
+                            middleware: middlewares
                         });
                     }
                 }

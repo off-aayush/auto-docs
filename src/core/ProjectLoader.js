@@ -28,7 +28,5 @@ export async function loadProject(projectPath) {
         project.addFile(fileModel);
     }
 
-    console.dir(project, {
-        depth: null,
-    });
+    return project;
 }

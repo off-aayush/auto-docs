@@ -8,6 +8,31 @@ export async function generateMarkdown(projectModel, outputDir) {
         
         let content = `# ${file.path}\n\n`;
 
+        // Summary
+        content += `## Summary\n\n`;
+        content += `Analysis of \`${file.path}\`.\n\n`;
+
+        // Metrics
+        content += `## Metrics\n\n`;
+        const metricsTable = [
+            ["Metric", "Count"],
+            ["Exports", file.exports?.length || 0],
+            ["Functions", file.functions?.length || 0],
+            ["Classes", file.classes?.length || 0],
+            ["Routes", file.routes?.length || 0],
+            ["Dependencies", file.imports?.length || 0]
+        ];
+        content += markdownTable(metricsTable) + "\n\n";
+
+        // Table of Contents
+        content += `## Table of Contents\n\n`;
+        if (file.exports && file.exports.length > 0) content += `- [Exports](#exports)\n`;
+        if (file.functions && file.functions.length > 0) content += `- [Functions](#functions)\n`;
+        if (file.classes && file.classes.length > 0) content += `- [Classes](#classes)\n`;
+        if (file.routes && file.routes.length > 0) content += `- [Routes](#routes)\n`;
+        if (file.imports && file.imports.length > 0) content += `- [Dependencies](#dependencies)\n`;
+        content += `\n`;
+
         // Exports
         if (file.exports && file.exports.length > 0) {
             content += `## Exports\n\n`;
@@ -68,9 +93,9 @@ export async function generateMarkdown(projectModel, outputDir) {
             content += markdownTable(table) + "\n\n";
         }
         
-        // Imports
+        // Dependencies
         if (file.imports && file.imports.length > 0) {
-            content += `## Imports\n\n`;
+            content += `## Dependencies\n\n`;
             const table = [["Source", "Type"]];
             file.imports.forEach(imp => {
                 table.push([imp.source, imp.type]);

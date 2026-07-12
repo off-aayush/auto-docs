@@ -42,7 +42,7 @@ export async function generateMermaid(dependencyGraph, projectModel, outputDir) 
                 graphMermaid += `    subgraph ${cat}\n`;
             }
             
-            nodes.forEach(node => {
+            nodes.sort().forEach(node => {
                 const cleanNode = node.replace(/[^a-zA-Z0-9]/g, "_");
                 const indent = cat !== "Other" ? "        " : "    ";
                 const nodeData = dependencyGraph.node(node);
@@ -58,7 +58,20 @@ export async function generateMermaid(dependencyGraph, projectModel, outputDir) 
         }
     }
     
-    dependencyGraph.edges().forEach(edge => {
+    // Sort edges and remove duplicates
+    const sortedEdges = dependencyGraph.edges().sort((a, b) => {
+        if (a.v !== b.v) return a.v.localeCompare(b.v);
+        return a.w.localeCompare(b.w);
+    });
+
+    const uniqueEdges = [];
+    for (let i = 0; i < sortedEdges.length; i++) {
+        if (i === 0 || sortedEdges[i].v !== sortedEdges[i-1].v || sortedEdges[i].w !== sortedEdges[i-1].w) {
+            uniqueEdges.push(sortedEdges[i]);
+        }
+    }
+
+    uniqueEdges.forEach(edge => {
         const cleanV = edge.v.replace(/[^a-zA-Z0-9]/g, "_");
         const cleanW = edge.w.replace(/[^a-zA-Z0-9]/g, "_");
         graphMermaid += `    ${cleanV} --> ${cleanW};\n`;
@@ -71,16 +84,21 @@ export async function generateMermaid(dependencyGraph, projectModel, outputDir) 
 
     // 2. Class Diagram
     let classMermaid = "classDiagram\n";
-    projectModel.files.forEach(file => {
-        file.classes.forEach(cls => {
+    const sortedFiles = [...projectModel.files].sort((a, b) => a.path.localeCompare(b.path));
+    
+    sortedFiles.forEach(file => {
+        const sortedClasses = [...file.classes].sort((a, b) => a.name.localeCompare(b.name));
+        sortedClasses.forEach(cls => {
             const cleanClassName = cls.name.replace(/[^a-zA-Z0-9]/g, "_");
             classMermaid += `    class ${cleanClassName} {\n`;
             
-            cls.properties.forEach(prop => {
+            const sortedProps = [...cls.properties].sort();
+            sortedProps.forEach(prop => {
                 classMermaid += `        +${prop}\n`;
             });
             
-            cls.methods.forEach(method => {
+            const sortedMethods = [...cls.methods].sort((a, b) => a.name.localeCompare(b.name));
+            sortedMethods.forEach(method => {
                 classMermaid += `        +${method.name}()\n`;
             });
 

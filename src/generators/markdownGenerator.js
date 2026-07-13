@@ -20,6 +20,7 @@ export async function generateMarkdown(projectModel, outputDir) {
             ["Functions", file.functions?.length || 0],
             ["Classes", file.classes?.length || 0],
             ["Routes", file.routes?.length || 0],
+            ["Components", file.components?.length || 0],
             ["Dependencies", file.imports?.length || 0]
         ];
         content += markdownTable(metricsTable) + "\n\n";
@@ -30,6 +31,7 @@ export async function generateMarkdown(projectModel, outputDir) {
         if (file.functions && file.functions.length > 0) content += `- [Functions](#functions)\n`;
         if (file.classes && file.classes.length > 0) content += `- [Classes](#classes)\n`;
         if (file.routes && file.routes.length > 0) content += `- [Routes](#routes)\n`;
+        if (file.components && file.components.length > 0) content += `- [Components](#components)\n`;
         if (file.imports && file.imports.length > 0) content += `- [Dependencies](#dependencies)\n`;
         content += `\n`;
 
@@ -98,6 +100,21 @@ export async function generateMarkdown(projectModel, outputDir) {
             content += markdownTable(table) + "\n\n";
         }
         
+        // Components
+        if (file.components && file.components.length > 0) {
+            content += `## Components\n\n`;
+            const table = [["Name", "Props", "Hooks", "JSX Children"]];
+            file.components.forEach(comp => {
+                table.push([
+                    comp.name,
+                    comp.props.length > 0 ? comp.props.join(", ") : "-",
+                    comp.hooks.length > 0 ? comp.hooks.join(", ") : "-",
+                    comp.jsxChildren.length > 0 ? comp.jsxChildren.join(", ") : "-"
+                ]);
+            });
+            content += markdownTable(table) + "\n\n";
+        }
+
         // Dependencies
         if (file.imports && file.imports.length > 0) {
             content += `## Dependencies\n\n`;

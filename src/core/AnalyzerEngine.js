@@ -3,13 +3,15 @@ import { analyzeFunctions } from "../analyzers/functionAnalyzer.js";
 import { analyzeExports } from "../analyzers/exportAnalyzer.js";
 import { analyzeClasses } from "../analyzers/classAnalyzer.js";
 import { analyzeRoutes } from "../analyzers/routeAnalyzer.js";
+import { analyzeReactComponents } from "../analyzers/reactAnalyzer.js";
 
 const analyzers = [
     analyzeImports,
     analyzeFunctions,
     analyzeExports,
     analyzeClasses,
-    analyzeRoutes
+    analyzeRoutes,
+    analyzeReactComponents
 ];
 
 export function analyze(fileModel) {

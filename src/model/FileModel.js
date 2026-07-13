@@ -15,5 +15,7 @@ export class FileModel {
         this.classes = [];
 
         this.routes = [];
+
+        this.components = [];
     }
 }

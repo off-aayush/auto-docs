@@ -4,22 +4,18 @@
   "description": "Automated technical documentation generator for JavaScript projects",
   "type": "module",
   "main": "src/index.js",
-
   "bin": {
     "autodocs": "./src/cli/index.js"
   },
-
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "echo \"No tests yet\""
   },
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/off-aayush/auto-docs.git"
   },
-
   "keywords": [
     "documentation",
     "javascript",
@@ -27,27 +23,23 @@
     "parser",
     "automation"
   ],
-
   "author": "Aayush Chourasia",
-
   "license": "MIT",
-
   "bugs": {
     "url": "https://github.com/off-aayush/auto-docs/issues"
   },
-
   "homepage": "https://github.com/off-aayush/auto-docs#readme",
-
   "engines": {
     "node": ">=20"
   },
-
   "dependencies": {
     "@babel/parser": "^7.29.7",
     "@babel/traverse": "^7.29.7",
     "@babel/types": "^7.29.7",
+    "@google/generative-ai": "^0.24.1",
     "chalk": "^5.6.2",
     "commander": "^15.0.0",
+    "dotenv": "^17.4.2",
     "fs-extra": "^11.3.6",
     "glob": "^13.0.6",
     "graphlib": "^2.1.8",
@@ -55,7 +47,6 @@
     "markdown-table": "^3.0.4",
     "ora": "^9.4.1"
   },
-
   "devDependencies": {
     "nodemon": "^3.1.14"
   }

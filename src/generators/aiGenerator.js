@@ -1,21 +1,26 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import chalk from "chalk";
 
 // ─────────────────────────────────────────────────────────────
-//  Initialise the Gemini client once per run
+//  Groq model to use — llama-3.1-8b-instant is free-tier
+//  friendly: fast, zero cost, 14,400 req/day, 6,000 req/min
+// ─────────────────────────────────────────────────────────────
+const GROQ_MODEL = "llama-3.1-8b-instant";
+
+// ─────────────────────────────────────────────────────────────
+//  Initialise the Groq client — reads GROQ_API_KEY from env
 // ─────────────────────────────────────────────────────────────
 function createClient() {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey || apiKey.trim() === "") {
         throw new Error(
-            "GEMINI_API_KEY is not set.\n" +
-            "  1. Get a free key at https://aistudio.google.com/apikey\n" +
-            "     → Click 'Create API key in new project' to ensure free-tier quota.\n" +
-            "  2. Paste it into your .env file:\n" +
-            "     GEMINI_API_KEY=your_key_here"
+            "GROQ_API_KEY is not set.\n" +
+            "  1. Get a free key (no credit card) at https://console.groq.com/keys\n" +
+            "  2. Add it to your .env file:\n" +
+            "     GROQ_API_KEY=gsk_your_key_here"
         );
     }
-    return new GoogleGenerativeAI(apiKey);
+    return new Groq({ apiKey });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -24,12 +29,10 @@ function createClient() {
 function buildPrompt(fileModel) {
     const lines = [
         `You are a senior technical documentation writer.`,
-        `Given the metadata below extracted from a JavaScript file, write a concise (3–5 sentence) plain-English description of:`,
-        `  - What this file does and its purpose in the project`,
-        `  - What its key exports/functions/classes are for`,
-        `  - Any notable architectural patterns (e.g. React components, Express routes)`,
-        ``,
-        `Do NOT restate the raw data as a list. Write flowing, readable prose.`,
+        `Given the metadata below extracted from a JavaScript file, write a concise (3–5 sentence) ` +
+        `plain-English description of what this file does, what its key exports/functions/classes are for, ` +
+        `and any notable architectural patterns (e.g. React components, Express routes).`,
+        `Write flowing, readable prose. Do NOT restate the raw data as a list.`,
         ``,
         `--- FILE METADATA ---`,
         `File: ${fileModel.path}`,
@@ -48,14 +51,14 @@ function buildPrompt(fileModel) {
 
     if (fileModel.classes?.length > 0) {
         const clsSummaries = fileModel.classes.map(c =>
-            `${c.name}${c.superClass ? ` extends ${c.superClass}` : ""} [methods: ${c.methods?.map(m => m.name).join(", ") || "none"}]`
+            `${c.name}${c.superClass ? ` extends ${c.superClass}` : ""} ` +
+            `[methods: ${c.methods?.map(m => m.name).join(", ") || "none"}]`
         );
         lines.push(`Classes: ${clsSummaries.join("; ")}`);
     }
 
     if (fileModel.routes?.length > 0) {
-        const routeSummaries = fileModel.routes.map(r => `${r.method.toUpperCase()} ${r.path}`);
-        lines.push(`Routes: ${routeSummaries.join(", ")}`);
+        lines.push(`Routes: ${fileModel.routes.map(r => `${r.method.toUpperCase()} ${r.path}`).join(", ")}`);
     }
 
     if (fileModel.components?.length > 0) {
@@ -66,10 +69,10 @@ function buildPrompt(fileModel) {
     }
 
     if (fileModel.imports?.length > 0) {
-        const externalDeps = fileModel.imports.filter(i => i.type === "external").map(i => i.source);
-        const internalDeps = fileModel.imports.filter(i => i.type === "internal").map(i => i.source);
-        if (externalDeps.length > 0) lines.push(`External deps: ${externalDeps.join(", ")}`);
-        if (internalDeps.length > 0) lines.push(`Internal deps: ${internalDeps.join(", ")}`);
+        const ext = fileModel.imports.filter(i => i.type === "external").map(i => i.source);
+        const int = fileModel.imports.filter(i => i.type === "internal").map(i => i.source);
+        if (ext.length > 0) lines.push(`External deps: ${ext.join(", ")}`);
+        if (int.length > 0) lines.push(`Internal deps: ${int.join(", ")}`);
     }
 
     lines.push(`--- END METADATA ---`);
@@ -77,7 +80,7 @@ function buildPrompt(fileModel) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Check if a file has any meaningful content worth summarising
+//  Only process files that have extractable content
 // ─────────────────────────────────────────────────────────────
 function hasContent(fileModel) {
     return (
@@ -90,62 +93,42 @@ function hasContent(fileModel) {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Parse the retryDelay seconds out of a 429 error message
+//  Parse retryDelay from a 429 response (e.g. "Please retry in 5s")
 // ─────────────────────────────────────────────────────────────
 function parseRetryDelay(errMessage) {
-    // The API embeds: "retryDelay":"Xs" in the JSON body
-    const match = errMessage.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
+    const match = errMessage.match(/Please retry in (\d+(?:\.\d+)?)s/i);
     if (match) return Math.ceil(parseFloat(match[1])) * 1000;
-    return null;
+    return 5000; // fallback: 5 seconds
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Detect a hard "limit: 0" quota error (not a temporary spike)
-// ─────────────────────────────────────────────────────────────
-function isHardQuotaError(errMessage) {
-    return errMessage.includes("limit: 0");
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Delay helper
-// ─────────────────────────────────────────────────────────────
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Call the model with smart retry + backoff (up to maxRetries)
+//  Call Groq with retry on temporary 429s (max 3 attempts)
 // ─────────────────────────────────────────────────────────────
-async function generateWithRetry(model, prompt, maxRetries = 3) {
-    let attempt = 0;
-    while (attempt <= maxRetries) {
+async function generateWithRetry(groq, prompt, maxRetries = 3) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-            const result = await model.generateContent(prompt);
-            return result.response.text().trim();
+            const completion = await groq.chat.completions.create({
+                model: GROQ_MODEL,
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: 256,
+                temperature: 0.4,
+            });
+            return completion.choices[0]?.message?.content?.trim() ?? "";
         } catch (err) {
-            const is429 = err.message?.includes("429");
-            const isHard = isHardQuotaError(err.message ?? "");
+            const is429 = err.status === 429 || err.message?.includes("429");
 
-            // Hard quota (limit: 0) — no point retrying, surface clearly
-            if (isHard) {
-                throw new Error(
-                    "Your API key's project has a free-tier quota of 0 for this model.\n" +
-                    "  → At https://aistudio.google.com/apikey, click\n" +
-                    "    'Create API key in new project' to get a fresh key with free-tier quota.\n" +
-                    "  → Or enable billing on your Google Cloud project."
-                );
-            }
-
-            // Temporary 429 — wait the server-advised delay then retry
             if (is429 && attempt < maxRetries) {
-                const retryMs = parseRetryDelay(err.message ?? "") ?? (5000 * (attempt + 1));
-                process.stdout.write(chalk.yellow(` (rate-limited, waiting ${Math.round(retryMs / 1000)}s…)`));
-                await sleep(retryMs);
-                attempt++;
+                const waitMs = parseRetryDelay(err.message ?? "");
+                process.stdout.write(chalk.yellow(` (rate-limited, waiting ${Math.round(waitMs / 1000)}s…)`));
+                await sleep(waitMs);
                 continue;
             }
 
-            throw err; // non-retryable error
+            throw err;
         }
     }
 }
@@ -154,8 +137,7 @@ async function generateWithRetry(model, prompt, maxRetries = 3) {
 //  Main export: generate AI summaries and attach to fileModels
 // ─────────────────────────────────────────────────────────────
 export async function generateAISummaries(projectModel) {
-    const genAI = createClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const groq = createClient();
 
     const filesToProcess = projectModel.files.filter(hasContent);
     const total = filesToProcess.length;
@@ -165,41 +147,24 @@ export async function generateAISummaries(projectModel) {
         return;
     }
 
-    console.log(chalk.blue(`  Generating AI summaries for ${total} file(s) via gemini-2.0-flash...`));
-
-    let hardQuotaDetected = false;
+    console.log(chalk.blue(`  Generating AI summaries for ${total} file(s) via Groq (${GROQ_MODEL})...`));
 
     for (let i = 0; i < filesToProcess.length; i++) {
         const file = filesToProcess[i];
         process.stdout.write(chalk.dim(`  [${i + 1}/${total}] ${file.path}...`));
 
-        // Stop firing requests once we know quota is 0 — avoids spamming error output
-        if (hardQuotaDetected) {
-            process.stdout.write(chalk.yellow(" skipped (quota issue)\n"));
-            file.aiSummary = null;
-            continue;
-        }
-
         try {
-            const prompt = buildPrompt(file);
-            const summary = await generateWithRetry(model, prompt);
+            const summary = await generateWithRetry(groq, buildPrompt(file));
             file.aiSummary = summary;
             process.stdout.write(chalk.green(" ✓\n"));
         } catch (err) {
-            if (isHardQuotaError(err.message ?? "") || err.message?.includes("free-tier quota of 0")) {
-                hardQuotaDetected = true;
-                process.stdout.write(chalk.red(" ✗\n"));
-                console.log(chalk.red(`\n  ⚠ Hard quota limit detected. Stopping AI generation.\n`));
-                console.log(chalk.yellow(`  ${err.message}\n`));
-            } else {
-                process.stdout.write(chalk.red(` ✗ (${err.message.split("\n")[0]})\n`));
-            }
+            process.stdout.write(chalk.red(` ✗ (${err.message?.split("\n")[0]})\n`));
             file.aiSummary = null;
         }
 
-        // 4-second inter-request gap to stay within free-tier RPM limits
-        if (!hardQuotaDetected && i < filesToProcess.length - 1) {
-            await sleep(4000);
+        // Groq free tier: 30 RPM on most models → 2s gap is safe
+        if (i < filesToProcess.length - 1) {
+            await sleep(2000);
         }
     }
 }

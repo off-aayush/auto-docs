@@ -12,7 +12,12 @@ export async function generateMarkdown(projectModel, outputDir) {
         content += `## Summary\n\n`;
         content += `Analysis of \`${file.path}\`.\n\n`;
 
-        // Metrics
+        // AI Summary (only present when --ai flag was used)
+        if (file.aiSummary) {
+            content += `## AI Summary\n\n`;
+            content += `> ${file.aiSummary.split("\n").join("\n> ")}\n\n`;
+        }
+
         content += `## Metrics\n\n`;
         const metricsTable = [
             ["Metric", "Count"],
@@ -27,6 +32,7 @@ export async function generateMarkdown(projectModel, outputDir) {
 
         // Table of Contents
         content += `## Table of Contents\n\n`;
+        if (file.aiSummary) content += `- [AI Summary](#ai-summary)\n`;
         if (file.exports && file.exports.length > 0) content += `- [Exports](#exports)\n`;
         if (file.functions && file.functions.length > 0) content += `- [Functions](#functions)\n`;
         if (file.classes && file.classes.length > 0) content += `- [Classes](#classes)\n`;

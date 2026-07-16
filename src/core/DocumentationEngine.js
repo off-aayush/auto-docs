@@ -1,22 +1,34 @@
-import path from "path";
+import "dotenv/config";
 import { buildDependencyGraph } from "./DependencyGraph.js";
 import { generateMarkdown } from "../generators/markdownGenerator.js";
 import { generateMermaid } from "../generators/mermaidGenerator.js";
+import { generateAISummaries } from "../generators/aiGenerator.js";
 import chalk from "chalk";
 
-export async function generateDocumentation(projectModel, outputDir) {
+export async function generateDocumentation(projectModel, outputDir, options = {}) {
     console.log(chalk.blue("Building dependency graph..."));
     const dependencyGraph = buildDependencyGraph(projectModel);
 
-    console.log(chalk.blue("Generating markdown files..."));
+    // ── AI Summaries (opt-in via --ai flag) ──────────────────────────────────
+    // Run BEFORE markdown generation so summaries are embedded inline.
+    if (options.ai) {
+        console.log(chalk.blue("\nGenerating AI narrative summaries..."));
+        try {
+            await generateAISummaries(projectModel);
+        } catch (err) {
+            console.error(chalk.red(`\n  AI generation failed: ${err.message}`));
+            console.log(chalk.yellow("  Continuing without AI summaries...\n"));
+        }
+    }
+
+    console.log(chalk.blue("\nGenerating markdown files..."));
     await generateMarkdown(projectModel, outputDir);
 
     console.log(chalk.blue("Generating mermaid diagrams..."));
     await generateMermaid(dependencyGraph, projectModel, outputDir);
 
-    console.log(chalk.blue("AI Documentation placeholder triggered... (skipping actual API call)"));
-    // TODO: Connect to Gemini/OpenAI here passing the projectModel context or dependencyGraph
-    // For now we just scaffold the hook.
-    
     console.log(chalk.green(`\nDocumentation generated successfully in ${outputDir}!`));
+    if (options.ai) {
+        console.log(chalk.dim("  Tip: AI summaries are embedded in each file's ## AI Summary section.\n"));
+    }
 }

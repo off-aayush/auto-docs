@@ -12,9 +12,10 @@ export async function startCLI() {
         .description("Generate technical documentation for JavaScript projects")
         .version("1.0.0")
         .argument("<projectPath>", "Path to the JavaScript project")
-        .action(async (projectPath) => {
+        .option("--ai", "Generate AI narrative summaries for each file using Gemini (requires GEMINI_API_KEY)")
+        .action(async (projectPath, options) => {
             const project = await loadProject(projectPath);
-            await generateDocumentation(project, "output");
+            await generateDocumentation(project, "output", options);
         });
 
     await program.parseAsync();

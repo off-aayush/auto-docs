@@ -3,11 +3,16 @@ import { buildDependencyGraph } from "./DependencyGraph.js";
 import { generateMarkdown } from "../generators/markdownGenerator.js";
 import { generateMermaid } from "../generators/mermaidGenerator.js";
 import { generateAISummaries } from "../generators/aiGenerator.js";
+import { computeMetrics } from "../analyzers/metricsAnalyzer.js";
+import { generateArchitectureReport } from "../generators/architectureReportGenerator.js";
 import chalk from "chalk";
 
 export async function generateDocumentation(projectModel, outputDir, options = {}) {
     console.log(chalk.blue("Building dependency graph..."));
     const dependencyGraph = buildDependencyGraph(projectModel);
+
+    console.log(chalk.blue("Computing repository metrics..."));
+    const metrics = computeMetrics(projectModel, dependencyGraph);
 
     // ── AI Summaries (opt-in via --ai flag) ──────────────────────────────────
     // Run BEFORE markdown generation so summaries are embedded inline.
@@ -26,6 +31,9 @@ export async function generateDocumentation(projectModel, outputDir, options = {
 
     console.log(chalk.blue("Generating mermaid diagrams..."));
     await generateMermaid(dependencyGraph, projectModel, outputDir);
+
+    console.log(chalk.blue("Generating architecture report..."));
+    await generateArchitectureReport(metrics, projectModel, outputDir);
 
     console.log(chalk.green(`\nDocumentation generated successfully in ${outputDir}!`));
     if (options.ai) {

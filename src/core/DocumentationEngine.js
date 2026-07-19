@@ -5,6 +5,7 @@ import { generateMermaid } from "../generators/mermaidGenerator.js";
 import { generateAISummaries } from "../generators/aiGenerator.js";
 import { computeMetrics } from "../analyzers/metricsAnalyzer.js";
 import { generateArchitectureReport } from "../generators/architectureReportGenerator.js";
+import { generateFolderSummaries } from "../generators/folderSummaryGenerator.js";
 import chalk from "chalk";
 
 export async function generateDocumentation(projectModel, outputDir, options = {}) {
@@ -34,6 +35,9 @@ export async function generateDocumentation(projectModel, outputDir, options = {
 
     console.log(chalk.blue("Generating architecture report..."));
     await generateArchitectureReport(metrics, projectModel, outputDir);
+
+    console.log(chalk.blue("Generating folder summaries..."));
+    await generateFolderSummaries(projectModel, outputDir, options);
 
     console.log(chalk.green(`\nDocumentation generated successfully in ${outputDir}!`));
     if (options.ai) {

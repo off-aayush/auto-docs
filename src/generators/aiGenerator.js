@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import chalk from "chalk";
+import path from "path";
 
 // ─────────────────────────────────────────────────────────────
 //  Groq model to use — llama-3.1-8b-instant is free-tier
@@ -168,3 +169,42 @@ export async function generateAISummaries(projectModel) {
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+//  Build prompt for a folder
+// ─────────────────────────────────────────────────────────────
+function buildFolderPrompt(folderPath, files, subdirs) {
+    const lines = [
+        `You are a senior technical documentation writer.`,
+        `Given the directory details below, write a cohesive, high-level overview (3–5 sentences) in plain-English of what this directory does, what its role in the overall architecture is, and how its contents work together.`,
+        `Write flowing, readable prose. Do NOT restate the raw data as a list.`,
+        ``,
+        `--- DIRECTORY METADATA ---`,
+        `Directory: ${folderPath}`,
+    ];
+
+    if (subdirs && subdirs.length > 0) {
+        lines.push(`Subdirectories: ${subdirs.join(", ")}`);
+    }
+
+    if (files && files.length > 0) {
+        lines.push(`Files in this directory:`);
+        files.forEach(f => {
+            const summaryPart = f.aiSummary ? ` - Summary: ${f.aiSummary}` : "";
+            lines.push(`- ${path.basename(f.path)}${summaryPart}`);
+        });
+    }
+
+    lines.push(`--- END METADATA ---`);
+    return lines.join("\n");
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Export: generate AI summary for a single folder
+// ─────────────────────────────────────────────────────────────
+export async function generateAIFolderSummary(folderPath, files, subdirs) {
+    const groq = createClient();
+    const prompt = buildFolderPrompt(folderPath, files, subdirs);
+    return await generateWithRetry(groq, prompt);
+}
+

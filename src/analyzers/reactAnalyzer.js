@@ -89,7 +89,8 @@ export function analyzeReactComponents(fileModel) {
             name: comp.name,
             props: comp.props,
             hooks: Array.from(comp.hooks),
-            jsxChildren: Array.from(comp.jsxElements)
+            jsxChildren: Array.from(comp.jsxElements),
+            loc: comp.path.node.loc
         });
     }
 }

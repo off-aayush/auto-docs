@@ -53,7 +53,8 @@ export function analyzeRoutes(fileModel) {
                             method: propertyName.toUpperCase(),
                             path: routePath,
                             handler,
-                            middleware: middlewares
+                            middleware: middlewares,
+                            loc: path.node.loc
                         });
                     }
                 }

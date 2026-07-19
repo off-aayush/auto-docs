@@ -24,7 +24,8 @@ export function analyzeClasses(fileModel) {
                 name: className,
                 superClass,
                 properties,
-                methods
+                methods,
+                loc: path.node.loc
             });
         }
     });

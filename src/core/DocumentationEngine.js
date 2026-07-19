@@ -6,6 +6,7 @@ import { generateAISummaries } from "../generators/aiGenerator.js";
 import { computeMetrics } from "../analyzers/metricsAnalyzer.js";
 import { generateArchitectureReport } from "../generators/architectureReportGenerator.js";
 import { generateFolderSummaries } from "../generators/folderSummaryGenerator.js";
+import { buildRepositoryIndex, saveRepositoryIndex } from "../knowledge/indexer.js";
 import chalk from "chalk";
 
 export async function generateDocumentation(projectModel, outputDir, options = {}) {
@@ -38,6 +39,10 @@ export async function generateDocumentation(projectModel, outputDir, options = {
 
     console.log(chalk.blue("Generating folder summaries..."));
     await generateFolderSummaries(projectModel, outputDir, options);
+
+    console.log(chalk.blue("Generating repository index..."));
+    const repositoryIndex = buildRepositoryIndex(projectModel);
+    await saveRepositoryIndex(repositoryIndex, outputDir);
 
     console.log(chalk.green(`\nDocumentation generated successfully in ${outputDir}!`));
     if (options.ai) {

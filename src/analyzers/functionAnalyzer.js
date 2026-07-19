@@ -14,6 +14,7 @@ export function analyzeFunctions(fileModel) {
             async: path.node.async,
             params: path.node.params.map((param) => param.name || "param"),
             type,
+            loc: path.node.loc,
         });
     };
 

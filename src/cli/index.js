@@ -3,19 +3,33 @@
 import { Command } from "commander";
 import { loadProject } from "../core/ProjectLoader.js";
 import { generateDocumentation } from "../core/DocumentationEngine.js";
+import { searchRepository, displaySearchResults } from "../knowledge/searchEngine.js";
 
 export async function startCLI() {
     const program = new Command();
 
     program
         .name("autodocs")
-        .description("Generate technical documentation for JavaScript projects")
-        .version("1.0.0")
-        .argument("<projectPath>", "Path to the JavaScript project")
-        .option("--ai", "Generate AI narrative summaries for each file using Gemini (requires GEMINI_API_KEY)")
+        .description("Repository Intelligence Platform & Technical Documentation Generator")
+        .version("1.0.0");
+
+    program
+        .command("generate <projectPath>", { isDefault: true })
+        .description("Generate technical documentation & repository knowledge store")
+        .option("--ai", "Generate AI narrative summaries using Groq (requires GROQ_API_KEY)")
         .action(async (projectPath, options) => {
             const project = await loadProject(projectPath);
             await generateDocumentation(project, "output", options);
+        });
+
+    program
+        .command("search <query>")
+        .description("Perform semantic vector search over the repository knowledge store")
+        .option("-o, --output <outputDir>", "Path to output directory containing vector_store.json", "output")
+        .option("-k, --top <topK>", "Number of top search results to return", "5")
+        .action(async (query, options) => {
+            const results = await searchRepository(query, options.output, parseInt(options.top, 10));
+            displaySearchResults(query, results);
         });
 
     await program.parseAsync();

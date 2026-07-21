@@ -7,6 +7,7 @@ import { computeMetrics } from "../analyzers/metricsAnalyzer.js";
 import { generateArchitectureReport } from "../generators/architectureReportGenerator.js";
 import { generateFolderSummaries } from "../generators/folderSummaryGenerator.js";
 import { buildRepositoryIndex, saveRepositoryIndex } from "../knowledge/indexer.js";
+import { buildAndSaveVectorStore } from "../knowledge/searchEngine.js";
 import chalk from "chalk";
 
 export async function generateDocumentation(projectModel, outputDir, options = {}) {
@@ -44,7 +45,9 @@ export async function generateDocumentation(projectModel, outputDir, options = {
     const repositoryIndex = buildRepositoryIndex(projectModel);
     await saveRepositoryIndex(repositoryIndex, outputDir);
 
-    console.log(chalk.green(`\nDocumentation generated successfully in ${outputDir}!`));
+    await buildAndSaveVectorStore(projectModel, outputDir);
+
+    console.log(chalk.green(`\nDocumentation & Knowledge Store generated successfully in ${outputDir}!`));
     if (options.ai) {
         console.log(chalk.dim("  Tip: AI summaries are embedded in each file's ## AI Summary section.\n"));
     }

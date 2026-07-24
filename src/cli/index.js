@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { loadProject } from "../core/ProjectLoader.js";
 import { generateDocumentation } from "../core/DocumentationEngine.js";
 import { searchRepository, displaySearchResults } from "../knowledge/searchEngine.js";
+import { askRepository, startInteractiveChat } from "../chat/chatEngine.js";
 
 export async function startCLI() {
     const program = new Command();
@@ -32,5 +33,20 @@ export async function startCLI() {
             displaySearchResults(query, results);
         });
 
+    program
+        .command("chat [query]")
+        .description("Ask the AutoDocs AI assistant about your codebase. Omit query for interactive REPL mode.")
+        .option("-o, --output <outputDir>", "Path to output directory containing vector_store.json", "output")
+        .action(async (query, options) => {
+            if (query) {
+                // Single-shot mode
+                await askRepository(query, options.output);
+            } else {
+                // Interactive REPL mode
+                await startInteractiveChat(options.output);
+            }
+        });
+
     await program.parseAsync();
 }
+
